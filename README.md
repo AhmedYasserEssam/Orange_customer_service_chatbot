@@ -215,4 +215,4 @@ For technical support or questions:
 
 ---
 
-**Note**: This is a demo, not on orange's real database
+**Note**: This is a demo during my intern for educational purpose, not on orange's real database
