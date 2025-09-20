@@ -215,4 +215,4 @@ For technical support or questions:
 
 ---
 
-**Note**: This is a demonstration application. For production use, ensure proper security measures, data validation, and integration with real Orange systems.
+**Note**: This is a demo, not on orange's real database
