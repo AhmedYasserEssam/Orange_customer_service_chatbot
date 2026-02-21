@@ -1,218 +1,125 @@
-# 🍊 Orange Customer Service Chatbot
+# Orange Customer Service Chatbot
 
-An intelligent AI-powered customer service assistant for Orange telecommunications services, built with Streamlit, ChromaDB, and Ollama for RAG (Retrieval-Augmented Generation).
+An AI-powered customer service assistant for Orange telecommunications, built with **Streamlit**, **ChromaDB**, and **Ollama** for RAG (Retrieval-Augmented Generation).
 
-## ✨ Features
+## Features
 
-- **Intelligent Chat Interface**: Modern, responsive chat UI with Orange branding
-- **RAG-Powered Responses**: Uses ChromaDB for document retrieval and Ollama for LLM responses
-- **User Authentication**: Secure login system with customer profile integration
-- **Personalized Assistance**: Tailored responses based on user's plan and usage
-- **Multi-Service Support**: Handles mobile plans, internet services, billing, and technical support
-- **Real-time Data**: Shows current usage, remaining quotas, and billing information
-- **Popular Questions**: Quick access to frequently asked questions
+- **RAG-Powered Responses** &mdash; ChromaDB vector retrieval + Ollama LLM
+- **User Authentication** &mdash; Login with customer profile integration
+- **Personalized Assistance** &mdash; Answers tailored to the user's plan and usage
+- **Multi-Service Support** &mdash; Mobile plans, home internet, billing, and troubleshooting
+- **Popular Questions** &mdash; Quick-access sidebar for common queries
 
-## 🚀 Quick Start
+## Prerequisites
 
-### Prerequisites
+- Python 3.8+
+- [Ollama](https://ollama.ai/download) installed and running
+- At least 8 GB RAM
 
-- Python 3.8 or higher
-- Ollama (for running LLM models locally)
-- Git
+## Quick Start
 
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd Orange_customer_service
-   ```
-
-2. **Run the setup script**
-   ```bash
-   python setup.py
-   ```
-   
-   This will:
-   - Install all Python dependencies
-   - Install and configure Ollama
-   - Download required AI models
-   - Process sample data
-   - Create the vector database
-
-3. **Start the application**
-   ```bash
-   # Make sure Ollama is running
-   ollama serve
-   
-   # In another terminal, start the app
-   streamlit run app.py
-   ```
-
-4. **Access the application**
-   - Open your browser to the URL shown in the terminal (usually http://localhost:8501)
-   - Use the sample credentials:
-     - Phone: `01226285272`
-     - Password: `12345678`
-
-## 🛠️ Manual Setup
-
-If the automated setup doesn't work, follow these steps:
-
-### 1. Install Python Dependencies
 ```bash
+# 1. Install dependencies
 pip install -r requirements.txt
-```
 
-### 2. Install and Setup Ollama
-
-**Windows:**
-- Download from https://ollama.ai/download
-- Install and restart your terminal
-
-**macOS/Linux:**
-```bash
-curl -fsSL https://ollama.ai/install.sh | sh
-```
-
-### 3. Start Ollama and Install Models
-```bash
-# Start Ollama service
+# 2. Start Ollama and pull models (in a separate terminal)
 ollama serve
-
-# In another terminal, install required models
 ollama pull nomic-embed-text
 ollama pull llama3.2
+
+# 3. Process data and build vector store
+python scripts/processing.py
+python scripts/rebuild_vectorstore.py
+
+# 4. Launch the app
+streamlit run src/app.py
 ```
 
-### 4. Process Data
-```bash
-# Process raw data
-python processing.py
+Open `http://localhost:8501` and log in with the sample credentials:
 
-# Build vector database
-python rebuild_vectorstore.py
-```
+| Field    | Value          |
+|----------|----------------|
+| Phone    | `01226285272`  |
+| Password | `12345678`     |
 
-### 5. Run the Application
-```bash
-streamlit run app.py
-```
-
-## 📁 Project Structure
+## Project Structure
 
 ```
-Orange_customer_service/
-├── app.py                 # Main Streamlit application
-├── chat_prompts.py        # RAG chatbot logic
-├── processing.py          # Data processing script
-├── rebuild_vectorstore.py # Vector database builder
-├── setup.py              # Automated setup script
-├── requirements.txt      # Python dependencies
+Orange_customer_service_chatbot/
+├── src/                           # Application package
+│   ├── app.py                     #   Streamlit UI entry point
+│   ├── config.py                  #   Configuration constants
+│   ├── models.py                  #   Embeddings, chat model, vectorstore
+│   ├── query_analyzer.py          #   LLM-based intent classification
+│   ├── retrieval.py               #   Document retrieval & context formatting
+│   ├── prompts.py                 #   System prompt construction
+│   ├── data_loader.py             #   Customer & internet catalog loading
+│   └── chatbot.py                 #   RAG response generation
+├── scripts/                       # Standalone CLI utilities
+│   ├── processing.py              #   Raw data → processed JSONL
+│   └── rebuild_vectorstore.py     #   Processed JSONL → ChromaDB
+├── tests/                         # Test scripts
+│   ├── test_chatbot.py
+│   ├── test_home_internet.py
+│   └── test_premier_retrieval.py
 ├── data/
-│   ├── raw/              # Raw data files
+│   ├── raw/                       # Source data files
 │   │   ├── Faqs.csv
 │   │   ├── internet_data.csv
 │   │   └── Orange_document.docx
-│   └── processed/        # Processed data
+│   └── processed/                 # Processed outputs
 │       ├── customers_stimulation.csv
-│       └── documents_for_rag.jsonl
-├── chroma_db/            # Vector database (created automatically)
-└── orange_logo.png       # Orange logo
+│       └── documents_for_rag_final.jsonl
+├── assets/
+│   └── orange_logo.png
+├── requirements.txt
+├── .gitignore
+└── README.md
 ```
 
-## 🔧 Configuration
+## Configuration
 
-### Models
-The application uses two Ollama models:
-- **nomic-embed-text**: For document embeddings
-- **llama3.2**: For chat responses
+Models are configured in `src/config.py`:
 
-You can change these in `chat_prompts.py`:
 ```python
-EMBED_MODEL = "nomic-embed-text"
-CHAT_MODEL = "llama3.2"
+EMBED_MODEL = "nomic-embed-text"   # Document embeddings
+CHAT_MODEL  = "llama3.2"           # Chat responses
 ```
 
-### Customer Data
-Customer data is stored in `data/processed/customers_stimulation.csv`. You can add more customers by following the same format.
+## Knowledge Base
 
-### Knowledge Base
-The chatbot's knowledge comes from:
-- FAQ data (`data/raw/Faqs.csv`)
-- Internet plans (`data/raw/internet_data.csv`)
-- Orange documentation (`data/raw/Orange_document.docx`)
+The chatbot's knowledge comes from three sources processed into a ChromaDB vector store:
 
-## 🎯 Usage
+| Source                  | Contents                         |
+|-------------------------|----------------------------------|
+| `data/raw/Faqs.csv`    | Frequently asked questions       |
+| `data/raw/internet_data.csv` | Internet plans and packages |
+| `data/raw/Orange_document.docx` | Orange service documentation |
 
-### For Customers
-1. **Login**: Use your phone number and password
-2. **Ask Questions**: Type any question about Orange services
-3. **Quick Actions**: Use popular questions in the sidebar
-4. **View Information**: Check your data usage, billing, and plan details
+To refresh after editing source data:
 
-### For Developers
-1. **Add New Data**: Place new CSV/DOCX files in `data/raw/`
-2. **Update Knowledge**: Run `python processing.py` to process new data
-3. **Rebuild Database**: Run `python rebuild_vectorstore.py` to update the vector store
-4. **Customize Responses**: Modify prompts in `chat_prompts.py`
+```bash
+python scripts/processing.py
+python scripts/rebuild_vectorstore.py
+```
 
-## 🔍 Troubleshooting
+## Troubleshooting
 
-### Common Issues
+| Error                    | Fix                                                              |
+|--------------------------|------------------------------------------------------------------|
+| Ollama not found         | Install from https://ollama.ai/download, then `ollama serve`     |
+| Model not found          | `ollama pull nomic-embed-text && ollama pull llama3.2`           |
+| Vectorstore not found    | `python scripts/processing.py && python scripts/rebuild_vectorstore.py` |
+| Port already in use      | `streamlit run src/app.py --server.port 8502`                    |
 
-**"Ollama not found"**
-- Make sure Ollama is installed and running
-- Check if `ollama serve` is running in the background
+## Running Tests
 
-**"Model not found"**
-- Install required models: `ollama pull nomic-embed-text` and `ollama pull llama3.2`
-
-**"Vectorstore not found"**
-- Run `python rebuild_vectorstore.py` to create the vector database
-
-**"No data found"**
-- Ensure data files exist in `data/raw/` directory
-- Run `python processing.py` to process the data
-
-**Port already in use**
-- Streamlit runs on port 8501 by default
-- Use `streamlit run app.py --server.port 8502` to use a different port
-
-### Performance Tips
-
-- **Memory**: Ensure you have at least 8GB RAM for smooth operation
-- **Models**: Larger models provide better responses but require more resources
-- **Data**: More data in the knowledge base improves response quality
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## 📄 License
-
-This project is for educational and demonstration purposes.
-
-## 🆘 Support
-
-For technical support or questions:
-- Check the troubleshooting section above
-- Review the logs in the terminal
-- Contact the development team
-
-## 🔮 Future Enhancements
-
-- [ ] Voice input/output support
-- [ ] Multi-language support
-- [ ] Integration with real Orange APIs
-- [ ] Advanced analytics and reporting
-- [ ] Mobile app version
-- [ ] Real-time data synchronization
+```bash
+python tests/test_chatbot.py
+python tests/test_home_internet.py
+python tests/test_premier_retrieval.py
+```
 
 ---
 
-**Note**: This is a demo during my intern for educational purpose, not on orange's real database
+**Note:** This is a demo built during an internship for educational purposes and does not use Orange's real database.

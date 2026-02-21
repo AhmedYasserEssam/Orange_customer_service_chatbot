@@ -1,12 +1,16 @@
-import streamlit as st
-import time
-from datetime import datetime
-from chat_prompts import get_fast_response, load_customer_data
-import warnings
-import csv
-from typing import Optional, Dict
-import base64
 import os
+import sys
+import csv
+import base64
+import warnings
+from datetime import datetime
+from typing import Optional, Dict
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+import streamlit as st
+
+from src.chatbot import get_fast_response
 
 # Suppress warnings for cleaner UI
 warnings.filterwarnings("ignore")
@@ -31,7 +35,7 @@ def get_base64_image(path: str) -> str:
         return ""
 
 # Pre-encode logo once so we don't repeatedly read the file
-ENCODED_LOGO = get_base64_image("orange_logo.png")
+ENCODED_LOGO = get_base64_image(os.path.join("assets", "orange_logo.png"))
 
 # Custom CSS for professional styling
 st.markdown("""
@@ -355,13 +359,10 @@ def get_bot_response(user_input):
             elif msg["role"] == "assistant" and history:
                 history[-1]["assistant"] = msg["content"]
         
-        # Get response from the chatbot
-        customer_data = load_customer_data()
         response = get_fast_response(
             user_input,
             history=history if history else None,
             user_profile=st.session_state.user_profile,
-            customer_data=customer_data,
         )
         return response
     except Exception as e:

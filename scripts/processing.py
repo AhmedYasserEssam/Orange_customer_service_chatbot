@@ -16,10 +16,12 @@ RAW_DIR = "data/raw"
 OUT_DIR = "data/processed"
 os.makedirs(OUT_DIR, exist_ok=True)
 
-rags_out = os.path.join(OUT_DIR, "documents_for_rag.jsonl")
+# Align with downstream expectation used by vectorstore builder
+rags_out = os.path.join(OUT_DIR, "documents_for_rag_final.jsonl")
 
 embeddings = OllamaEmbeddings(model="nomic-embed-text")
-chunker = SemanticChunker(embeddings)
+# Use a smaller breakpoint threshold to create smaller, more focused chunks
+chunker = SemanticChunker(embeddings, breakpoint_threshold_type="percentile", breakpoint_threshold_amount=50)
 
 def clean_text(s: str):
     return " ".join(str(s).split()).strip() if s else ""
@@ -152,18 +154,37 @@ def process_docx():
     text = "\n\n".join(paras)
 
     # semantic (agentic) chunking
-    from langchain.schema import Document as LCDocument
+    from langchain_core.documents import Document as LCDocument
     doc_obj = LCDocument(page_content=text, metadata={"source": "orange_document.docx"})
     chunks = chunker.split_documents([doc_obj])
 
     docs = []
     for i, ch in enumerate(chunks):
+        # Add rich metadata to help retrieval
+        content = ch.page_content
+        metadata = dict(ch.metadata)
+        
+        # Tag documents containing tariff plans with minutes
+        if "Minutes to any network" in content or "minutes to Orange network" in content:
+            metadata["has_minutes"] = "true"
+            metadata["plan_type"] = "tariff_plan"
+        
+        # Tag specific plan types
+        if "PREMIER" in content:
+            metadata["plan_category"] = "PREMIER"
+        elif "ALO" in content.upper() or "Alo" in content:
+            metadata["plan_category"] = "ALO"
+        elif "FREEmax" in content:
+            metadata["plan_category"] = "FREEmax"
+        elif "GO" in content and ("GO " in content or "GO@" in content):
+            metadata["plan_category"] = "GO"
+        
         docs.append({
             "id": f"doc-{i}",
             "section": "document",
             "title": "orange_document",
             "content": ch.page_content,
-            "metadata": ch.metadata
+            "metadata": metadata
         })
     print(f"[Docx] {len(docs)} semantic chunks")
     return docs

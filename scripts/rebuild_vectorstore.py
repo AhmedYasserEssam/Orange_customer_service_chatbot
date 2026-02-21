@@ -11,10 +11,13 @@ from typing import List, Dict
 
 from langchain_chroma import Chroma
 from langchain_ollama import OllamaEmbeddings
-from langchain.schema import Document as LCDocument
+from langchain_core.documents import Document as LCDocument
 
 # --- Config ---
 PROCESSED_PATH = os.path.join("data", "processed", "documents_for_rag_final.jsonl")
+PROCESSED_FALLBACKS = [
+    os.path.join("data", "processed", "documents_for_rag.jsonl"),
+]
 CHROMA_DB_DIR = "chroma_db"
 COLLECTION = "documents"
 EMBED_MODEL = "nomic-embed-text"
@@ -58,22 +61,30 @@ def get_vectorstore() -> Chroma:
     Rebuilds or loads the Chroma vectorstore from processed documents.
     Returns the Chroma vectorstore instance.
     """
-    if not os.path.exists(PROCESSED_PATH):
-        raise FileNotFoundError(f"Processed file not found: {PROCESSED_PATH}")
+    target_path = PROCESSED_PATH
+    if not os.path.exists(target_path):
+        # Try fallbacks
+        for fb in PROCESSED_FALLBACKS:
+            if os.path.exists(fb):
+                target_path = fb
+                print(f"⚠️ Using fallback processed file: {fb}")
+                break
+        if not os.path.exists(target_path):
+            raise FileNotFoundError(f"Processed file not found: {PROCESSED_PATH}")
 
-    print("🔄 Loading processed documents...")
-    rows = load_jsonl(PROCESSED_PATH)
-    print(f"✅ Loaded {len(rows)} documents")
+    print("Loading processed documents...")
+    rows = load_jsonl(target_path)
+    print(f"Loaded {len(rows)} documents")
 
     embeddings = OllamaEmbeddings(model=EMBED_MODEL)
 
     # Remove existing DB to rebuild
     if os.path.exists(CHROMA_DB_DIR):
-        print("🧹 Clearing existing Chroma directory to rebuild...")
+        print("Clearing existing Chroma directory to rebuild...")
         shutil.rmtree(CHROMA_DB_DIR, ignore_errors=True)
     os.makedirs(CHROMA_DB_DIR, exist_ok=True)
 
-    print("🧠 Building vectorstore...")
+    print("Building vectorstore...")
     vectorstore = Chroma(
         collection_name=COLLECTION,
         embedding_function=embeddings,
@@ -101,7 +112,7 @@ def get_vectorstore() -> Chroma:
     else:
         print("❌ No documents to index.")
 
-    print(f"✅ Vectorstore ready at: {CHROMA_DB_DIR}")
+    print(f"Vectorstore ready at: {CHROMA_DB_DIR}")
     print(f"Total documents in vectorstore: {vectorstore._collection.count()}")
 
     return vectorstore
